@@ -3,35 +3,65 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ------------------------------
- * ダミー質問（5問想定）
- * ------------------------------ */
+/* ==============================
+ * ダミー質問（5問）
+ * ============================== */
 const questions = [
-  "最近、十分な睡眠が取れていますか？",
-  "日常的に体を動かしていますか？",
-  "食事のバランスに満足していますか？",
-  "ストレスを感じることは多いですか？",
-  "自分の体調を意識する時間はありますか？",
+  {
+    id: 1,
+    text: "最近の体調はどうですか？",
+    left: "とても良い",
+    right: "少し疲れ気味",
+  },
+  {
+    id: 2,
+    text: "運動習慣はありますか？",
+    left: "週に数回",
+    right: "ほとんどない",
+  },
+  {
+    id: 3,
+    text: "睡眠の質はどう感じますか？",
+    left: "よく眠れている",
+    right: "浅い気がする",
+  },
+  {
+    id: 4,
+    text: "食生活は整っていますか？",
+    left: "バランス良い",
+    right: "乱れがち",
+  },
+  {
+    id: 5,
+    text: "今いちばん改善したいのは？",
+    left: "体型・姿勢",
+    right: "肌・透明感",
+  },
 ];
 
-/* 背景グラデーション（ベージュ系・微差） */
-const backgrounds = [
-  "from-mirror-secondary to-white",
-  "from-mirror-secondary/80 to-white",
-  "from-white to-mirror-secondary/80",
-  "from-mirror-secondary/70 to-white",
-  "from-white to-mirror-secondary/60",
+/* ==============================
+ * Persona themeColors のダミー
+ * ============================== */
+const backgroundColors = [
+  "#F5F5F0",
+  "#E5DED4",
+  "#D2B48C",
+  "#CFC6B8",
+  "#B8B0A2",
 ];
 
 export default function DiagnosisPage() {
-  const [index, setIndex] = useState(0);
+  const [current, setCurrent] = useState(0);
 
-  const total = questions.length;
-  const progress = ((index + 1) / total) * 100;
+  const progress = ((current + 1) / questions.length) * 100;
 
-  const handleAnswer = () => {
-    if (index < total - 1) {
-      setIndex((prev) => prev + 1);
+  const handleAnswer = (answer: string) => {
+    console.log(
+      `Q${questions[current].id} 回答: ${answer}`
+    );
+
+    if (current < questions.length - 1) {
+      setCurrent((prev) => prev + 1);
     } else {
       console.log("診断完了（ダミー）");
     }
@@ -39,25 +69,26 @@ export default function DiagnosisPage() {
 
   return (
     <motion.div
-      key={index}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
-      className={`min-h-screen bg-gradient-to-br ${backgrounds[index]} px-6 py-10 font-sans`}
+      className="relative min-h-screen px-6 pt-8 font-sans"
+      animate={{
+        backgroundColor:
+          backgroundColors[current % backgroundColors.length],
+      }}
+      transition={{ duration: 0.8, ease: "easeInOut" }}
     >
       {/* ==============================
           プログレスバー
-         ============================== */}
-      <div className="mx-auto mb-10 max-w-xl">
-        <div className="mb-3 flex justify-between text-xs text-mirror-tertiary/70">
+      ============================== */}
+      <div className="mx-auto mb-10 max-w-md">
+        <div className="mb-2 flex justify-between text-xs text-mirror-charcoal/60">
           <span>
-            質問 {index + 1} / {total}
+            質問 {current + 1} / {questions.length}
           </span>
-          <span>残り {total - index - 1}</span>
+          <span>{Math.round(progress)}%</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-mirror-tertiary/10">
+        <div className="h-2 w-full rounded-full bg-white/40 backdrop-blur">
           <motion.div
-            className="h-full rounded-full bg-mirror-primary"
+            className="h-2 rounded-full bg-mirror-primary"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -67,48 +98,49 @@ export default function DiagnosisPage() {
 
       {/* ==============================
           質問カード
-         ============================== */}
-      <div className="mx-auto flex max-w-xl items-center justify-center">
+      ============================== */}
+      <div className="mx-auto flex max-w-md items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
-            key={questions[index]}
+            key={questions[current].id}
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.45, ease: "easeOut" }}
-            className="
-              w-full rounded-3xl
-              border border-white/30
-              bg-white/40 p-8
-              shadow-xl backdrop-blur-xl
-            "
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="w-full rounded-3xl bg-white/30 p-8 shadow-xl backdrop-blur-lg"
           >
             {/* 質問文 */}
-            <p className="mb-10 text-center text-xl font-semibold leading-relaxed text-mirror-tertiary">
-              {questions[index]}
+            <p className="mb-10 text-center text-lg font-semibold text-mirror-charcoal">
+              {questions[current].text}
             </p>
 
             {/* 選択肢 */}
-            <div className="grid grid-cols-2 gap-4">
-              {["はい", "いいえ"].map((label) => (
-                <motion.button
-                  key={label}
-                  whileHover={{ y: -2, scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleAnswer}
-                  className="
-                    rounded-2xl
-                    border border-white/40
-                    bg-white/50 px-4 py-6
-                    text-base font-medium text-mirror-tertiary
-                    shadow-md backdrop-blur-lg
-                    transition
-                    hover:bg-white/70 hover:shadow-lg
-                  "
-                >
-                  {label}
-                </motion.button>
-              ))}
+            <div className="flex gap-4">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() =>
+                  handleAnswer(
+                    questions[current].left
+                  )
+                }
+                className="flex-1 rounded-2xl bg-white/40 px-4 py-6 text-mirror-charcoal shadow-md backdrop-blur-lg"
+              >
+                {questions[current].left}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() =>
+                  handleAnswer(
+                    questions[current].right
+                  )
+                }
+                className="flex-1 rounded-2xl bg-white/40 px-4 py-6 text-mirror-charcoal shadow-md backdrop-blur-lg"
+              >
+                {questions[current].right}
+              </motion.button>
             </div>
           </motion.div>
         </AnimatePresence>
