@@ -1,132 +1,89 @@
-'use client'
-
-import { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { sendMessageToDify } from '@/lib/api'
-import AvatarDisplay from '@/components/AvatarDisplay'
-import { personas } from '@/lib/personas'
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Persona, personas } from '@/lib/personas';
+import AvatarDisplay from '@/components/AvatarDisplay';
+import MoodSelector from '@/components/MoodSelector';
+import Lottie from 'lottie-react';
+import loadingSpinner from '../../../public/lottie/loading_spinner.json';
 
 export default function HomePage() {
-  const selectedPersona = personas[0]
+  const router = useRouter();
+  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [aiExpression, setAiExpression] = useState<'normal' | 'happy' | 'concerned' | 'serious'>('normal');
 
-  const [currentMessage, setCurrentMessage] = useState(
-    '今日はどんな気分ですか？'
-  )
-  const [loading, setLoading] = useState(false)
-  const [aiExpression, setAiExpression] = useState<'neutral' | 'smile' | 'tired'>(
-    'neutral'
-  )
+  // localStorageからselectedModelIdを取得
+  useEffect(() => {
+    const id = localStorage.getItem('selectedModelId');
+    const persona = personas.find((p) => p.id === id) ?? personas[0];
+    setSelectedPersona(persona);
+  }, []);
 
-  /* ===== 時間帯判定 ===== */
-  const timeOfDay = useMemo<'morning' | 'afternoon' | 'evening'>(() => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'morning'
-    if (hour < 18) return 'afternoon'
-    return 'evening'
-  }, [])
+  // 時間帯取得
+  const getTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'morning';
+    if (hour < 18) return 'afternoon';
+    return 'evening';
+  };
 
-  /* ===== 気分選択 ===== */
-  const handleMoodSelect = async (moodText: string) => {
-    if (loading) return
+  // AIメッセージに基づき表情マッピング
+  const mapExpression = (text: string): 'normal' | 'happy' | 'concerned' | 'serious' => {
+    if (text.includes('お疲れ')) return 'concerned';
+    if (text.includes('素晴らしい')) return 'happy';
+    if (text.includes('頑張って')) return 'serious';
+    return 'normal';
+  };
 
-    setLoading(true)
-    setCurrentMessage('')
+  const handleMoodSelect = async (mood: string) => {
+    if (!selectedPersona) return;
+    setLoading(true);
+    setCurrentMessage('');
 
-    const query = `現在の時間帯：${timeOfDay}。ユーザーの状態：${moodText}。これに寄り添う言葉と1分でできるアクションを提案してください。`
+    const message = `現在の時間帯：${getTimeOfDay()}。ユーザーの状態：${mood}。これに寄り添う言葉と1分でできるアクションを提案してください。`;
 
     try {
+      const { sendMessageToDify } = await import('@/lib/api');
       await sendMessageToDify({
-        message: query,
+        message,
         personaInstruction: selectedPersona.systemPrompt,
-
-        /* ▼ ストリーミング受信 */
-        onStream: (partial: string) => {
-          setCurrentMessage(prev => prev + partial)
-
-          /* 表情切り替え（簡易ルール） */
-          if (partial.includes('お疲れ')) {
-            setAiExpression('tired')
-          }
-          if (
-            partial.includes('素晴らしい') ||
-            partial.includes('いいですね')
-          ) {
-            setAiExpression('smile')
-          }
+        onStream: (partial) => {
+          setCurrentMessage((prev) => prev + partial);
+          setAiExpression(mapExpression(partial));
         },
-      })
-    } catch (error) {
-      console.error(error)
-      setCurrentMessage('少し通信が不安定なようです。もう一度試してください。')
-      setAiExpression('neutral')
+      });
+    } catch (err) {
+      console.error(err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  if (!selectedPersona) return null;
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-mirror-beige-light">
-      {/* ===== アバターエリア ===== */}
-      <div className="relative flex flex-col items-center pt-20">
-        <AvatarDisplay
-          persona={selectedPersona}
-          aiExpression={aiExpression}
-        />
+    <div
+      className={`min-h-screen flex flex-col items-center justify-start bg-${selectedPersona.themeColors.background} font-sans transition-colors duration-700`}
+    >
+      <AvatarDisplay
+        persona={selectedPersona}
+        aiExpression={aiExpression}
+        userExpression="normal"
+      />
 
-        {/* ===== メッセージ吹き出し ===== */}
-        <motion.div
-          layout
-          className="
-            mt-6 max-w-md px-6 py-4
-            bg-white/20 backdrop-blur-md
-            rounded-3xl shadow-mirror-neumorphic
-            text-center text-sm
-          "
-        >
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={currentMessage}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {currentMessage}
-            </motion.p>
-          </AnimatePresence>
-        </motion.div>
+      {/* メッセージ吹き出し */}
+      <div className="mt-8 p-4 bg-white/20 backdrop-blur-md rounded-2xl shadow-mirror-neumorphic w-80 min-h-[80px] text-center text-lg">
+        {loading ? (
+          <Lottie animationData={loadingSpinner} loop autoplay style={{ width: 60, height: 60, margin: '0 auto' }} />
+        ) : (
+          currentMessage
+        )}
       </div>
 
-      {/* ===== 気分選択 ===== */}
-      <div className="mt-12 flex justify-center gap-4 px-6">
-        {[
-          '少しお疲れ気味',
-          '普通',
-          '調子がいい',
-        ].map(mood => (
-          <motion.button
-            key={mood}
-            disabled={loading}
-            whileTap={{ scale: 0.95 }}
-            className={`
-              px-5 py-3 rounded-2xl
-              bg-white/30 backdrop-blur-md
-              shadow-mirror-neumorphic
-              text-sm
-              ${loading ? 'opacity-40 pointer-events-none' : ''}
-            `}
-            onClick={() => handleMoodSelect(mood)}
-          >
-            {mood}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* ===== ローディング表示 ===== */}
-      {loading && (
-        <div className="mt-6 text-center text-xs opacity-60">
-          AIメンターが考えています…
-        </div>
-      )}
+      {/* 気分選択カード */}
+      <MoodSelector onSelect={handleMoodSelect} disabled={loading} />
     </div>
-  )
+  );
 }

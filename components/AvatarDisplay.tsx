@@ -1,110 +1,61 @@
-'use client'
+'use client';
+import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import auraGlow from '../../public/lottie/aura_glow.json';
+import { Persona } from '@/lib/personas';
 
-import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
-import { Persona } from '@/lib/personas'
-
-/* =========================
-   型定義
-========================= */
-
-export type ExpressionType =
-  | 'neutral'
-  | 'smile'
-  | 'tired'
-  | 'serious'
-  | 'concerned'
-
-interface AvatarDisplayProps {
-  persona: Persona
-  aiExpression: ExpressionType
-  userAvatarImage?: string
-  userExpression?: ExpressionType
+interface Props {
+  persona: Persona;
+  aiExpression: 'normal' | 'happy' | 'concerned' | 'serious';
+  userExpression?: 'normal' | 'happy' | 'concerned' | 'serious';
+  userAvatarImage?: string;
 }
-
-/* =========================
-   表情マッピング
-   UI用表情 → Persona定義キー
-========================= */
-
-const expressionMap: Record<
-  ExpressionType,
-  keyof Persona['avatarExpressions']
-> = {
-  neutral: 'normal',
-  smile: 'happy',
-  tired: 'concerned',
-  concerned: 'concerned',
-  serious: 'serious',
-}
-
-/* =========================
-   Component
-========================= */
 
 export default function AvatarDisplay({
   persona,
   aiExpression,
+  userExpression = 'normal',
   userAvatarImage,
-  userExpression = 'neutral',
-}: AvatarDisplayProps) {
-  const aiAvatarSrc =
-    persona.avatarExpressions[expressionMap[aiExpression]]
-
-  const userAvatarSrc =
-    userAvatarImage ??
-    'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
-
+}: Props) {
   return (
-    <div className="relative flex items-center justify-center w-full h-[320px]">
-      {/* =====================
-          User Avatar (back)
-      ====================== */}
-      <div className="absolute z-10 translate-x-[-40px] translate-y-[20px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`user-${userExpression}`}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-full overflow-hidden"
-          >
-            <Image
-              src={userAvatarSrc}
-              alt="User Avatar"
-              width={120}
-              height={120}
-              className="rounded-full"
-            />
-          </motion.div>
+    <div className="relative w-64 h-64 mx-auto mt-12">
+      {/* ユーザーアバター */}
+      {userAvatarImage && (
+        <AnimatePresence>
+          <motion.img
+            key={userExpression}
+            src={userAvatarImage}
+            alt="User Avatar"
+            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-full object-cover border-2 border-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
         </AnimatePresence>
-      </div>
+      )}
 
-      {/* =====================
-          AI Mentor Avatar (front)
-      ====================== */}
-      <div className="absolute z-20 translate-x-[40px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`ai-${aiExpression}`}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-full overflow-hidden shadow-lg"
-          >
-            <Image
-              src={aiAvatarSrc}
-              alt={persona.name}
-              width={160}
-              height={160}
-              className="rounded-full"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {/* オーラアニメーション */}
+      <Lottie
+        className="absolute inset-0"
+        animationData={auraGlow}
+        loop
+        autoplay
+        style={{ opacity: 0.3 }}
+      />
+
+      {/* AIメンターアバター */}
+      <AnimatePresence>
+        <motion.img
+          key={aiExpression}
+          src={persona.avatarExpressions[aiExpression] ?? persona.avatarExpressions.normal}
+          alt="AI Mentor"
+          className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-32 rounded-full object-cover border-2 border-white shadow-mirror-neumorphic"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.5 }}
+        />
+      </AnimatePresence>
     </div>
-  )
+  );
 }
