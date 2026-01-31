@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 /* ==============================
  * ダミー質問（5問）
@@ -50,7 +51,17 @@ const backgroundColors = [
   "#B8B0A2",
 ];
 
+/* ==============================
+ * 既存の modelId 計算ロジック（仮）
+ * ※ 実際は既存ロジックに置き換える
+ * ============================== */
+const getSelectedModelId = (): string => {
+  // ダミー例
+  return "asami";
+};
+
 export default function DiagnosisPage() {
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
 
   const progress = ((current + 1) / questions.length) * 100;
@@ -60,11 +71,30 @@ export default function DiagnosisPage() {
       `Q${questions[current].id} 回答: ${answer}`
     );
 
+    // 最終質問でなければ次へ
     if (current < questions.length - 1) {
       setCurrent((prev) => prev + 1);
-    } else {
-      console.log("診断完了（ダミー）");
+      return;
     }
+
+    /* ==============================
+     * 診断完了処理
+     * ============================== */
+    const selectedModelId = getSelectedModelId();
+
+    // localStorage に保存
+    localStorage.setItem(
+      "selectedModelId",
+      selectedModelId
+    );
+
+    console.log(
+      "診断完了 / selectedModelId:",
+      selectedModelId
+    );
+
+    // avatar-generation へ遷移
+    router.push("/avatar-generation");
   };
 
   return (
