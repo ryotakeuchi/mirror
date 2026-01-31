@@ -1,33 +1,64 @@
-"use client";
+'use client'
 
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import Lottie from 'lottie-react'
+import successAnim from '@/public/lottie/particle-converge.json'
 
 export default function HealthScanPage() {
-  const router = useRouter();
+  const [weight, setWeight] = useState('')
+  const [bodyFat, setBodyFat] = useState('')
+  const [muscle, setMuscle] = useState('')
+  const [saved, setSaved] = useState(false)
 
-  const saveDummyInBodyData = () => {
-    const inbodyData = {
-      weight: 54,        // kg
-      bodyFat: 22,       // %
-      muscleMass: 38,    // kg
-    };
-
-    localStorage.setItem("inbodyData", JSON.stringify(inbodyData));
-    router.push("/home");
-  };
+  const saveData = () => {
+    localStorage.setItem(
+      'inbody',
+      JSON.stringify({
+        weight: Number(weight),
+        bodyFat: Number(bodyFat),
+        muscle: Number(muscle),
+      })
+    )
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-mirror-beige-light">
-      <h1 className="text-xl font-semibold mb-6">
-        InBody データをスキャン中…
-      </h1>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <input
+        className="border p-2"
+        placeholder="体重"
+        value={weight}
+        onChange={(e) => setWeight(e.target.value)}
+      />
+      <input
+        className="border p-2"
+        placeholder="体脂肪率"
+        value={bodyFat}
+        onChange={(e) => setBodyFat(e.target.value)}
+      />
+      <input
+        className="border p-2"
+        placeholder="筋肉量"
+        value={muscle}
+        onChange={(e) => setMuscle(e.target.value)}
+      />
 
       <button
-        onClick={saveDummyInBodyData}
-        className="px-8 py-4 rounded-xl bg-white/30 backdrop-blur-lg shadow-lg"
+        onClick={saveData}
+        className="px-6 py-2 bg-black text-white rounded"
       >
-        スキャン完了（ダミー）
+        保存
       </button>
+
+      {saved && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+          <Lottie
+            animationData={successAnim}
+            className="w-64 h-64"
+          />
+        </div>
+      )}
     </div>
-  );
+  )
 }

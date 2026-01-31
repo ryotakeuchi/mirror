@@ -1,52 +1,88 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { personas } from "@/lib/personas";
-import AvatarDisplay from "@/components/AvatarDisplay";
-
-type InBodyData = {
-  weight: number;
-  bodyFat: number;
-  muscleMass: number;
-};
+import { useEffect, useState } from 'react'
+import { personas } from '@/lib/personas'
+import { sendMessageToDify } from '@/lib/api'
+import AvatarDisplay from '@/components/AvatarDisplay'
+import Lottie from 'lottie-react'
+import loadingAnim from '@/public/lottie/particle-converge.json'
 
 export default function HomePage() {
-  const [persona, setPersona] = useState(personas[0]);
-  const [inbody, setInbody] = useState<InBodyData | null>(null);
+  const [persona, setPersona] = useState(personas[0])
+  const [message, setMessage] = useState(persona.initialGreeting)
+  const [loading, setLoading] = useState(false)
+  const [expression, setExpression] =
+    useState<'normal' | 'happy' | 'concerned' | 'serious'>(
+      'normal'
+    )
 
-  useEffect(() => {
-    const selectedId = localStorage.getItem("selectedModelId");
-    if (selectedId) {
-      const found = personas.find(p => p.id === selectedId);
-      if (found) setPersona(found);
-    }
+  const inbody =
+    typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('inbody') || '{}')
+      : {}
 
-    const savedInbody = localStorage.getItem("inbodyData");
-    if (savedInbody) {
-      setInbody(JSON.parse(savedInbody));
-    }
-  }, []);
+  const moods = [
+    { label: '🌿 少しお疲れ気味', key: '疲れ' },
+    { label: '✨ 自分を磨きたい', key: '成長' },
+    { label: '🕯️ 静かに過ごしたい', key: '静か' },
+  ]
+
+  const handleMood = async (text: string) => {
+    setLoading(true)
+
+    const res = await sendMessageToDify(
+      persona.systemPrompt,
+      `ユーザーの状態：${text}`
+    )
+
+    const answer = res.answer
+    setMessage(answer)
+
+    if (answer.includes('素晴らしい')) setExpression('happy')
+    else if (answer.includes('お疲れ')) setExpression('concerned')
+    else setExpression('normal')
+
+    setLoading(false)
+  }
 
   return (
     <div
-      className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-700 ${persona.themeColors[0]}`}
+      className="min-h-screen flex flex-col items-center justify-between p-6"
+      style={{
+        background: persona.themeColors[0],
+      }}
     >
-      {/* ユーザーアバター */}
-      <AvatarDisplay
-        avatarUrl="https://api.dicebear.com/7.x/avataaars/svg?seed=user"
-        inbody={inbody}
-      />
+      <div className="mt-12">
+        <AvatarDisplay
+          image={persona.avatarExpressions[expression]}
+          bodyFat={inbody.bodyFat}
+          muscle={inbody.muscle}
+        />
 
-      {/* AIメンター */}
-      <img
-        src={persona.avatarImage}
-        alt={persona.name}
-        className="w-24 h-24 mt-6 rounded-full"
-      />
+        <div className="mt-6 p-4 bg-white/60 backdrop-blur rounded-xl max-w-md">
+          {message}
+        </div>
+      </div>
 
-      <p className="mt-4 text-center text-lg font-medium max-w-md">
-        {persona.initialGreeting}
-      </p>
+      <div className="w-full max-w-md space-y-3 mb-8">
+        {moods.map((m) => (
+          <button
+            key={m.key}
+            disabled={loading}
+            onClick={() => handleMood(m.key)}
+            className="w-full p-4 rounded-xl bg-white/40 backdrop-blur border hover:scale-[1.02] transition"
+          >
+            {loading ? (
+              <Lottie
+                animationData={loadingAnim}
+                className="h-10 mx-auto"
+              />
+            ) : (
+              m.label
+            )}
+          </button>
+        ))}
+      </div>
     </div>
-  );
+  )
 }
