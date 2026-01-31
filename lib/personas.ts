@@ -24,7 +24,7 @@ export const personas: Persona[] = [
   {
     id: 'asami',
     name: '麻美',
-    avatarImage: 'https://api.dicebear.com/7.x/lorelei/svg?seed=asami',
+    avatarImage: 'avatar-mentor-asami.png',
     initialGreeting: '今日の調子、鏡みたいに一緒に見ていこ。',
     systemPrompt: 'あなたは優しく寄り添うAIメンターです。',
 
@@ -34,11 +34,12 @@ export const personas: Persona[] = [
       text: '#4A4A4A',
     },
 
+    //表情ごとにここは変える//
     avatarExpressions: {
-      normal: 'https://api.dicebear.com/7.x/lorelei/svg?seed=asami',
-      happy: 'https://api.dicebear.com/7.x/lorelei/svg?seed=asami-happy',
-      concerned: 'https://api.dicebear.com/7.x/lorelei/svg?seed=asami-concerned',
-      serious: 'https://api.dicebear.com/7.x/lorelei/svg?seed=asami-serious',
+      normal: 'avatar-mentor-asami.png',
+      happy: 'avatar-mentor-asami.png',
+      concerned: 'avatar-mentor-asami.png',
+      serious: 'avatar-mentor-asami.png',
     },
   },
 ]
