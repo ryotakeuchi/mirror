@@ -1,29 +1,46 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useMemo } from 'react'
 
-type Props = {
-  image: string
-  bodyFat?: number
-  muscle?: number
+type AvatarExpressions = {
+  normal: string
+  happy: string
+  concerned: string
+  serious: string
 }
 
-export default function AvatarDisplay({
-  image,
-  bodyFat = 25,
-  muscle = 50,
-}: Props) {
-  const scale = Math.max(0.9, 1.1 - bodyFat / 100)
-  const opacity = Math.min(1, 0.7 + muscle / 200)
-  const filter = `brightness(${1 + muscle / 300})`
+type Props = {
+  expressions: AvatarExpressions
+  message: string
+}
+
+export default function AvatarDisplay({ expressions, message }: Props) {
+  const currentExpression = useMemo(() => {
+    if (!message) return expressions.normal
+
+    if (message.includes('お疲れ')) return expressions.concerned
+    if (message.includes('素晴らしい') || message.includes('いいですね'))
+      return expressions.happy
+    if (message.includes('大切') || message.includes('意識'))
+      return expressions.serious
+
+    return expressions.normal
+  }, [message, expressions])
 
   return (
-    <motion.img
-      src={image}
-      alt="avatar"
-      className="w-64 h-64 mx-auto rounded-full"
-      animate={{ scale, opacity, filter }}
-      transition={{ duration: 0.8 }}
-    />
+    <motion.div
+      key={currentExpression}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex justify-center"
+    >
+      <img
+        src={currentExpression}
+        alt="AI Mentor Avatar"
+        className="w-40 h-40 rounded-full shadow-lg"
+      />
+    </motion.div>
   )
 }

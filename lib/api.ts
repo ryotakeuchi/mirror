@@ -1,37 +1,28 @@
-const DIFY_API_URL = process.env.NEXT_PUBLIC_DIFY_API_URL!;
-const DIFY_API_KEY = process.env.NEXT_PUBLIC_DIFY_API_KEY!;
-
-type DifyResponse = {
-  answer: string;
-};
-
-export async function sendMessageToDify(
-  message: string,
+type SendMessageParams = {
+  message: string
   personaInstruction: string
-): Promise<DifyResponse> {
-  const res = await fetch(DIFY_API_URL, {
-    method: "POST",
+}
+
+export async function sendMessageToDify({
+  message,
+  personaInstruction,
+}: SendMessageParams) {
+  const res = await fetch('/api/dify', {
+    method: 'POST',
     headers: {
-      "Authorization": `Bearer ${DIFY_API_KEY}`,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       inputs: {
         persona_instruction: personaInstruction,
       },
       query: message,
-      response_mode: "blocking",
-      user: "mirror-user",
     }),
-  });
+  })
 
   if (!res.ok) {
-    throw new Error("Failed to fetch from Dify API");
+    throw new Error('Dify API Error')
   }
 
-  const data = await res.json();
-
-  return {
-    answer: data.answer ?? "",
-  };
+  return res.json()
 }
