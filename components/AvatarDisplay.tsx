@@ -1,52 +1,110 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import { Persona } from '@/lib/personas'
 
-type Props = {
+/* =========================
+   型定義
+========================= */
+
+export type ExpressionType =
+  | 'neutral'
+  | 'smile'
+  | 'tired'
+  | 'serious'
+  | 'concerned'
+
+interface AvatarDisplayProps {
   persona: Persona
-  message?: string
+  aiExpression: ExpressionType
+  userAvatarImage?: string
+  userExpression?: ExpressionType
 }
 
-export default function AvatarDisplay({ persona, message }: Props) {
-  const [expression, setExpression] = useState<
-    keyof Persona['avatarExpressions']
-  >('normal')
+/* =========================
+   表情マッピング
+   UI用表情 → Persona定義キー
+========================= */
 
-  useEffect(() => {
-    if (!message) {
-      setExpression('normal')
-      return
-    }
+const expressionMap: Record<
+  ExpressionType,
+  keyof Persona['avatarExpressions']
+> = {
+  neutral: 'normal',
+  smile: 'happy',
+  tired: 'concerned',
+  concerned: 'concerned',
+  serious: 'serious',
+}
 
-    if (message.includes('お疲れ') || message.includes('無理')) {
-      setExpression('concerned')
-    } else if (message.includes('素晴らしい') || message.includes('いいですね')) {
-      setExpression('happy')
-    } else if (message.includes('大切') || message.includes('考えて')) {
-      setExpression('serious')
-    } else {
-      setExpression('normal')
-    }
-  }, [message])
+/* =========================
+   Component
+========================= */
+
+export default function AvatarDisplay({
+  persona,
+  aiExpression,
+  userAvatarImage,
+  userExpression = 'neutral',
+}: AvatarDisplayProps) {
+  const aiAvatarSrc =
+    persona.avatarExpressions[expressionMap[aiExpression]]
+
+  const userAvatarSrc =
+    userAvatarImage ??
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=user'
 
   return (
-    <motion.div
-      className="relative flex items-center justify-center"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6 }}
-    >
-      <motion.img
-        key={expression}
-        src={persona.avatarExpressions[expression]}
-        alt={persona.name}
-        className="w-52 h-52 rounded-full shadow-xl"
-        initial={{ opacity: 0.5, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
-      />
-    </motion.div>
+    <div className="relative flex items-center justify-center w-full h-[320px]">
+      {/* =====================
+          User Avatar (back)
+      ====================== */}
+      <div className="absolute z-10 translate-x-[-40px] translate-y-[20px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`user-${userExpression}`}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-full overflow-hidden"
+          >
+            <Image
+              src={userAvatarSrc}
+              alt="User Avatar"
+              width={120}
+              height={120}
+              className="rounded-full"
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* =====================
+          AI Mentor Avatar (front)
+      ====================== */}
+      <div className="absolute z-20 translate-x-[40px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`ai-${aiExpression}`}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-full overflow-hidden shadow-lg"
+          >
+            <Image
+              src={aiAvatarSrc}
+              alt={persona.name}
+              width={160}
+              height={160}
+              className="rounded-full"
+              priority
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
   )
 }
