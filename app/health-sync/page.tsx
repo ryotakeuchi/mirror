@@ -1,139 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useApp } from "@/contexts/AppContext";
-import { Activity, Moon, Check } from "lucide-react";
 
 export default function HealthSyncPage() {
-  const router = useRouter();
-  const { setOnboarded } = useApp();
-  const [permissions, setPermissions] = useState({
-    steps: false,
-    sleep: false,
-  });
-
-  const handleToggle = (key: "steps" | "sleep") => {
-    setPermissions((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const handleContinue = () => {
-    setOnboarded(true);
-    router.push("/diagnosis");
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base via-white to-base flex items-center justify-center p-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden bg-mirror-secondary px-6 py-10">
+      {/* 背景（抽象グラデーション：白 × ベージュ） */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-white/70 blur-3xl" />
+        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-mirror-primary/40 blur-3xl" />
+      </div>
+
+      {/* 中央コンテンツ */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center">
+        {/* メッセージ */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-10 max-w-sm font-serif text-2xl leading-relaxed text-mirror-tertiary"
+        >
+          あなたの健康データが、
+          <br />
+          未来の美しさを創る鍵です
+        </motion.p>
+
+        {/* 画像エリア（仮：抽象グラデーション） */}
+        <div
+          className="h-56 w-56 rounded-3xl
+            bg-gradient-to-br from-white via-mirror-secondary to-mirror-primary/40
+            shadow-inner"
+        />
+      </div>
+
+      {/* 下部：同期ボタン */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.8 }}
+        className="relative z-10 w-full max-w-md pb-4"
       >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif font-bold mb-4 text-charcoal">
-            ヘルスケアデータの連携
-          </h1>
-          <p className="text-lg text-charcoal/70">
-            Mirrorがあなたの健康データにアクセスして、パーソナライズされたアドバイスを提供します。
-          </p>
-        </div>
-
-        <div className="space-y-4 mb-8">
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="glass rounded-2xl p-6 soft-shadow cursor-pointer"
-            onClick={() => handleToggle("steps")}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-charcoal/10 flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-charcoal" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-charcoal">歩数データ</h3>
-                  <p className="text-sm text-charcoal/60">Apple Health / Google Fit</p>
-                </div>
-              </div>
-              <motion.div
-                className={`w-12 h-6 rounded-full p-1 ${
-                  permissions.steps ? "bg-charcoal" : "bg-charcoal/20"
-                }`}
-                animate={{
-                  backgroundColor: permissions.steps
-                    ? "rgba(74, 74, 74, 1)"
-                    : "rgba(74, 74, 74, 0.2)",
-                }}
-              >
-                <motion.div
-                  className="w-4 h-4 bg-white rounded-full"
-                  animate={{
-                    x: permissions.steps ? 24 : 0,
-                  }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="glass rounded-2xl p-6 soft-shadow cursor-pointer"
-            onClick={() => handleToggle("sleep")}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-charcoal/10 flex items-center justify-center">
-                  <Moon className="w-6 h-6 text-charcoal" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-charcoal">睡眠データ</h3>
-                  <p className="text-sm text-charcoal/60">Apple Health / Google Fit</p>
-                </div>
-              </div>
-              <motion.div
-                className={`w-12 h-6 rounded-full p-1 ${
-                  permissions.sleep ? "bg-charcoal" : "bg-charcoal/20"
-                }`}
-                animate={{
-                  backgroundColor: permissions.sleep
-                    ? "rgba(74, 74, 74, 1)"
-                    : "rgba(74, 74, 74, 0.2)",
-                }}
-              >
-                <motion.div
-                  className="w-4 h-4 bg-white rounded-full"
-                  animate={{
-                    x: permissions.sleep ? 24 : 0,
-                  }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-
         <motion.button
-          onClick={handleContinue}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="w-full py-4 px-6 rounded-full bg-charcoal text-white font-semibold soft-shadow flex items-center justify-center gap-2"
+          whileTap={{ scale: 0.97 }}
+          onClick={() => {
+            console.log("同期開始（ダミー）");
+          }}
+          className="
+            w-full rounded-full
+            bg-white/20 px-8 py-4
+            font-sans text-lg font-medium text-mirror-tertiary
+            shadow-lg backdrop-blur-lg
+            transition hover:bg-white/30
+          "
         >
-          続ける
-          <Check className="w-5 h-5" />
+          ヘルスケアと同期する
         </motion.button>
-
-        <button
-          onClick={handleContinue}
-          className="w-full mt-4 py-3 text-charcoal/60 hover:text-charcoal transition-colors"
-        >
-          後で設定
-        </button>
       </motion.div>
     </div>
   );

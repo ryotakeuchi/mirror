@@ -1,162 +1,118 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { useApp } from "@/contexts/AppContext";
-import { diagnosisQuestions, calculatePersona } from "@/lib/personas";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+/* ------------------------------
+ * ダミー質問（5問想定）
+ * ------------------------------ */
+const questions = [
+  "最近、十分な睡眠が取れていますか？",
+  "日常的に体を動かしていますか？",
+  "食事のバランスに満足していますか？",
+  "ストレスを感じることは多いですか？",
+  "自分の体調を意識する時間はありますか？",
+];
+
+/* 背景グラデーション（ベージュ系・微差） */
+const backgrounds = [
+  "from-mirror-secondary to-white",
+  "from-mirror-secondary/80 to-white",
+  "from-white to-mirror-secondary/80",
+  "from-mirror-secondary/70 to-white",
+  "from-white to-mirror-secondary/60",
+];
 
 export default function DiagnosisPage() {
-  const router = useRouter();
-  const { updateDiagnosisAnswer, diagnosisAnswers, setSelectedPersona, setCompletedDiagnosis } = useApp();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [dragX, setDragX] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [index, setIndex] = useState(0);
 
-  const question = diagnosisQuestions[currentStep];
-  const progress = ((currentStep + 1) / diagnosisQuestions.length) * 100;
+  const total = questions.length;
+  const progress = ((index + 1) / total) * 100;
 
-  const handleSelect = (value: string) => {
-    setSelectedOption(value);
-    updateDiagnosisAnswer(question.category, value);
-    
-    setTimeout(() => {
-      if (currentStep < diagnosisQuestions.length - 1) {
-        setCurrentStep(currentStep + 1);
-        setSelectedOption(null);
-        setDragX(0);
-      } else {
-        // Calculate persona and navigate
-        const updatedAnswers = {
-          ...diagnosisAnswers,
-          [question.category]: value,
-        };
-        const persona = calculatePersona(updatedAnswers);
-        if (persona) {
-          setSelectedPersona(persona);
-          setCompletedDiagnosis(true);
-          router.push("/avatar-generation");
-        }
-      }
-    }, 500);
-  };
-
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (Math.abs(info.offset.x) > 100) {
-      if (info.offset.x > 0 && currentStep > 0) {
-        setCurrentStep(currentStep - 1);
-        setSelectedOption(null);
-        setDragX(0);
-      }
+  const handleAnswer = () => {
+    if (index < total - 1) {
+      setIndex((prev) => prev + 1);
     } else {
-      setDragX(0);
+      console.log("診断完了（ダミー）");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-base via-white to-base flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-charcoal/60 mb-2">
-            <span>質問 {currentStep + 1} / {diagnosisQuestions.length}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <div className="h-2 bg-charcoal/10 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-charcoal rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
+    <motion.div
+      key={index}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className={`min-h-screen bg-gradient-to-br ${backgrounds[index]} px-6 py-10 font-sans`}
+    >
+      {/* ==============================
+          プログレスバー
+         ============================== */}
+      <div className="mx-auto mb-10 max-w-xl">
+        <div className="mb-3 flex justify-between text-xs text-mirror-tertiary/70">
+          <span>
+            質問 {index + 1} / {total}
+          </span>
+          <span>残り {total - index - 1}</span>
         </div>
-
-        {/* Question Card */}
-        <motion.div
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDrag={(_, info) => setDragX(info.offset.x)}
-          onDragEnd={handleDragEnd}
-          animate={{ x: dragX }}
-          className="relative"
-        >
+        <div className="h-2 overflow-hidden rounded-full bg-mirror-tertiary/10">
           <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            className="glass rounded-3xl p-8 soft-shadow"
-          >
-            <h2 className="text-2xl font-serif font-bold mb-8 text-charcoal text-center">
-              {question.question}
-            </h2>
-
-            <div className="space-y-4">
-              <motion.button
-                onClick={() => handleSelect(question.optionA.value)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-4 px-6 rounded-2xl text-left transition-all ${
-                  selectedOption === question.optionA.value
-                    ? "bg-charcoal text-white"
-                    : "bg-white/50 text-charcoal hover:bg-white/70"
-                } soft-shadow`}
-              >
-                {question.optionA.text}
-              </motion.button>
-
-              <motion.button
-                onClick={() => handleSelect(question.optionB.value)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-4 px-6 rounded-2xl text-left transition-all ${
-                  selectedOption === question.optionB.value
-                    ? "bg-charcoal text-white"
-                    : "bg-white/50 text-charcoal hover:bg-white/70"
-                } soft-shadow`}
-              >
-                {question.optionB.text}
-              </motion.button>
-
-              {question.optionC && (
-                <motion.button
-                  onClick={() => handleSelect(question.optionC.value)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`w-full py-4 px-6 rounded-2xl text-left transition-all ${
-                    selectedOption === question.optionC.value
-                      ? "bg-charcoal text-white"
-                      : "bg-white/50 text-charcoal hover:bg-white/70"
-                  } soft-shadow`}
-                >
-                  {question.optionC.text}
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Navigation */}
-        <div className="flex justify-between mt-6">
-          <button
-            onClick={() => {
-              if (currentStep > 0) {
-                setCurrentStep(currentStep - 1);
-                setSelectedOption(null);
-                setDragX(0);
-              }
-            }}
-            disabled={currentStep === 0}
-            className="flex items-center gap-2 text-charcoal/60 disabled:opacity-30"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            戻る
-          </button>
+            className="h-full rounded-full bg-mirror-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
         </div>
       </div>
-    </div>
+
+      {/* ==============================
+          質問カード
+         ============================== */}
+      <div className="mx-auto flex max-w-xl items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={questions[index]}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className="
+              w-full rounded-3xl
+              border border-white/30
+              bg-white/40 p-8
+              shadow-xl backdrop-blur-xl
+            "
+          >
+            {/* 質問文 */}
+            <p className="mb-10 text-center text-xl font-semibold leading-relaxed text-mirror-tertiary">
+              {questions[index]}
+            </p>
+
+            {/* 選択肢 */}
+            <div className="grid grid-cols-2 gap-4">
+              {["はい", "いいえ"].map((label) => (
+                <motion.button
+                  key={label}
+                  whileHover={{ y: -2, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleAnswer}
+                  className="
+                    rounded-2xl
+                    border border-white/40
+                    bg-white/50 px-4 py-6
+                    text-base font-medium text-mirror-tertiary
+                    shadow-md backdrop-blur-lg
+                    transition
+                    hover:bg-white/70 hover:shadow-lg
+                  "
+                >
+                  {label}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
