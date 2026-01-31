@@ -1,59 +1,37 @@
-import { Persona } from "./personas";
+const DIFY_API_URL = process.env.NEXT_PUBLIC_DIFY_API_URL!;
+const DIFY_API_KEY = process.env.NEXT_PUBLIC_DIFY_API_KEY!;
 
-export interface DifyResponse {
-  success: boolean;
-  data?: {
-    answer?: string;
-    message_id?: string;
-    conversation_id?: string;
-    [key: string]: any;
-  };
-  error?: string;
-  details?: string;
-}
+type DifyResponse = {
+  answer: string;
+};
 
-/**
- * Dify APIにメッセージを送信する関数
- * @param message - ユーザーが送信するメッセージ
- * @param persona - 選択されたペルソナ（オプション）
- * @returns Dify APIからのレスポンス
- */
 export async function sendMessageToDify(
   message: string,
-  persona?: Persona
+  personaInstruction: string
 ): Promise<DifyResponse> {
-  try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  const res = await fetch(DIFY_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${DIFY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      inputs: {
+        persona_instruction: personaInstruction,
       },
-      body: JSON.stringify({
-        message,
-        personaId: persona?.id,
-        personaInstruction: persona?.systemPrompt,
-      }),
-    });
+      query: message,
+      response_mode: "blocking",
+      user: "mirror-user",
+    }),
+  });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.error || "リクエストに失敗しました",
-        details: data.details,
-      };
-    }
-
-    return {
-      success: true,
-      data: data.data,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: "ネットワークエラーが発生しました",
-      details: error instanceof Error ? error.message : "Unknown error",
-    };
+  if (!res.ok) {
+    throw new Error("Failed to fetch from Dify API");
   }
+
+  const data = await res.json();
+
+  return {
+    answer: data.answer ?? "",
+  };
 }
