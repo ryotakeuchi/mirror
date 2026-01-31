@@ -1,32 +1,52 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import Image from 'next/image'
+import { Persona } from '@/lib/personas'
 import Lottie from 'lottie-react'
 import auraGlow from '../../public/lottie/aura_glow.json'
-import { Persona } from '@/lib/personas'
 
-type Expression = 'normal' | 'happy' | 'concerned' | 'serious'
+/**
+ * Avatar 表情型
+ * 既存の 'normal' | 'happy' | 'concerned' | 'serious' に加え
+ * 安全のため任意の文字列も受け入れられるように string を許容
+ */
+export type AvatarExpression = 'neutral' | 'smile' | 'tired' | 'serious' | 'concerned'
 
-interface Props {
+type Props = {
   persona: Persona
-  aiExpression: Expression
-  userExpression?: Expression
+  aiExpression?: AvatarExpression | string
+  userExpression?: AvatarExpression | string
   userAvatarImage?: string
+  className?: string
 }
 
 export default function AvatarDisplay({
   persona,
   aiExpression,
-  userExpression = 'normal',
+  userExpression,
   userAvatarImage,
+  className,
 }: Props) {
-  const aiAvatar = persona.avatarExpressions[aiExpression] ?? persona.avatarExpressions.normal
-  const userAvatar = userAvatarImage ?? persona.avatarExpressions.normal
+  // フォールバック関数：受け取った表情が存在しなければ normal/neutral に
+  const getAiAvatar = () => {
+    const key = aiExpression && aiExpression in persona.avatarExpressions
+      ? aiExpression
+      : 'normal'
+    return persona.avatarExpressions[key as keyof typeof persona.avatarExpressions]
+  }
+
+  const getUserAvatar = () => {
+    if (userAvatarImage) return userAvatarImage
+    const key = userExpression && userExpression in persona.avatarExpressions
+      ? userExpression
+      : 'normal'
+    return persona.avatarExpressions[key as keyof typeof persona.avatarExpressions]
+  }
 
   return (
-    <div className="relative w-64 h-64 mx-auto mt-12">
-      {/* オーラ */}
+    <div className={`relative w-64 h-64 mx-auto mt-12 ${className ?? ''}`}>
+      {/* オーラアニメーション */}
       <Lottie
         className="absolute inset-0"
         animationData={auraGlow}
@@ -46,7 +66,7 @@ export default function AvatarDisplay({
           className="absolute left-1/2 top-1/3 -translate-x-1/2"
         >
           <Image
-            src={aiAvatar}
+            src={getAiAvatar()}
             width={140}
             height={140}
             alt={`${persona.name} avatar`}
@@ -66,7 +86,7 @@ export default function AvatarDisplay({
           className="absolute left-1/2 bottom-0 -translate-x-1/2"
         >
           <Image
-            src={userAvatar}
+            src={getUserAvatar()}
             width={90}
             height={90}
             alt="User avatar"
