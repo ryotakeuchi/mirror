@@ -1,45 +1,51 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useMemo } from 'react'
-
-type AvatarExpressions = {
-  normal: string
-  happy: string
-  concerned: string
-  serious: string
-}
+import { Persona } from '@/lib/personas'
 
 type Props = {
-  expressions: AvatarExpressions
-  message: string
+  persona: Persona
+  message?: string
 }
 
-export default function AvatarDisplay({ expressions, message }: Props) {
-  const currentExpression = useMemo(() => {
-    if (!message) return expressions.normal
+export default function AvatarDisplay({ persona, message }: Props) {
+  const [expression, setExpression] = useState<
+    keyof Persona['avatarExpressions']
+  >('normal')
 
-    if (message.includes('お疲れ')) return expressions.concerned
-    if (message.includes('素晴らしい') || message.includes('いいですね'))
-      return expressions.happy
-    if (message.includes('大切') || message.includes('意識'))
-      return expressions.serious
+  useEffect(() => {
+    if (!message) {
+      setExpression('normal')
+      return
+    }
 
-    return expressions.normal
-  }, [message, expressions])
+    if (message.includes('お疲れ') || message.includes('無理')) {
+      setExpression('concerned')
+    } else if (message.includes('素晴らしい') || message.includes('いいですね')) {
+      setExpression('happy')
+    } else if (message.includes('大切') || message.includes('考えて')) {
+      setExpression('serious')
+    } else {
+      setExpression('normal')
+    }
+  }, [message])
 
   return (
     <motion.div
-      key={currentExpression}
+      className="relative flex items-center justify-center"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-      className="flex justify-center"
+      transition={{ duration: 0.6 }}
     >
-      <img
-        src={currentExpression}
-        alt="AI Mentor Avatar"
-        className="w-40 h-40 rounded-full shadow-lg"
+      <motion.img
+        key={expression}
+        src={persona.avatarExpressions[expression]}
+        alt={persona.name}
+        className="w-52 h-52 rounded-full shadow-xl"
+        initial={{ opacity: 0.5, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
       />
     </motion.div>
   )

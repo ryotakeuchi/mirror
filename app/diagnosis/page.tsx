@@ -1,180 +1,143 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
-/* ==============================
- * ダミー質問（5問）
- * ============================== */
-const questions = [
-  {
-    id: 1,
-    text: "最近の体調はどうですか？",
-    left: "とても良い",
-    right: "少し疲れ気味",
-  },
-  {
-    id: 2,
-    text: "運動習慣はありますか？",
-    left: "週に数回",
-    right: "ほとんどない",
-  },
-  {
-    id: 3,
-    text: "睡眠の質はどう感じますか？",
-    left: "よく眠れている",
-    right: "浅い気がする",
-  },
-  {
-    id: 4,
-    text: "食生活は整っていますか？",
-    left: "バランス良い",
-    right: "乱れがち",
-  },
-  {
-    id: 5,
-    text: "今いちばん改善したいのは？",
-    left: "体型・姿勢",
-    right: "肌・透明感",
-  },
-];
+const QUESTIONS = [
+  '最近、疲れを感じやすいですか？',
+  '美容や健康に意識的ですか？',
+  '運動は習慣化できていますか？',
+  '自分磨きに前向きですか？',
+  'どんなAIメンターに導かれたいですか？',
+]
 
-/* ==============================
- * Persona themeColors のダミー
- * ============================== */
-const backgroundColors = [
-  "#F5F5F0",
-  "#E5DED4",
-  "#D2B48C",
-  "#CFC6B8",
-  "#B8B0A2",
-];
+/**
+ * ベージュ系の繊細なグラデーション（tailwind.config.ts想定）
+ */
+const BACKGROUND_GRADIENTS = [
+  ['#F5F5F0', '#EDE8DE'],
+  ['#EFE8DC', '#E5DED4'],
+  ['#E8DDCC', '#D2B48C'],
+  ['#E5DED4', '#CFC2A6'],
+  ['#D2B48C', '#BFA27A'],
+]
 
-/* ==============================
- * 既存の modelId 計算ロジック（仮）
- * ※ 実際は既存ロジックに置き換える
- * ============================== */
-const getSelectedModelId = (): string => {
-  // ダミー例
-  return "asami";
-};
+const cardVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 300 : -300,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? -300 : 300,
+    opacity: 0,
+  }),
+}
 
 export default function DiagnosisPage() {
-  const router = useRouter();
-  const [current, setCurrent] = useState(0);
+  const router = useRouter()
+  const [index, setIndex] = useState(0)
+  const [direction, setDirection] = useState(0)
 
-  const progress = ((current + 1) / questions.length) * 100;
+  const progress = ((index + 1) / QUESTIONS.length) * 100
 
-  const handleAnswer = (answer: string) => {
-    console.log(
-      `Q${questions[current].id} 回答: ${answer}`
-    );
+  const nextQuestion = (dir: number) => {
+    setDirection(dir)
 
-    // 最終質問でなければ次へ
-    if (current < questions.length - 1) {
-      setCurrent((prev) => prev + 1);
-      return;
+    if (index === QUESTIONS.length - 1) {
+      // 仮ロジック（本来は診断計算結果）
+      localStorage.setItem('selectedModelId', 'asami')
+      router.push('/avatar-generation')
+      return
     }
 
-    /* ==============================
-     * 診断完了処理
-     * ============================== */
-    const selectedModelId = getSelectedModelId();
-
-    // localStorage に保存
-    localStorage.setItem(
-      "selectedModelId",
-      selectedModelId
-    );
-
-    console.log(
-      "診断完了 / selectedModelId:",
-      selectedModelId
-    );
-
-    // avatar-generation へ遷移
-    router.push("/avatar-generation");
-  };
+    setIndex(prev => prev + 1)
+  }
 
   return (
     <motion.div
-      className="relative min-h-screen px-6 pt-8 font-sans"
+      className="min-h-screen flex flex-col items-center justify-center px-6"
       animate={{
-        backgroundColor:
-          backgroundColors[current % backgroundColors.length],
+        background: `linear-gradient(
+          135deg,
+          ${BACKGROUND_GRADIENTS[index][0]},
+          ${BACKGROUND_GRADIENTS[index][1]}
+        )`,
       }}
-      transition={{ duration: 0.8, ease: "easeInOut" }}
+      transition={{ duration: 1.2, ease: 'easeInOut' }}
     >
-      {/* ==============================
-          プログレスバー
-      ============================== */}
-      <div className="mx-auto mb-10 max-w-md">
-        <div className="mb-2 flex justify-between text-xs text-mirror-charcoal/60">
-          <span>
-            質問 {current + 1} / {questions.length}
-          </span>
-          <span>{Math.round(progress)}%</span>
-        </div>
-        <div className="h-2 w-full rounded-full bg-white/40 backdrop-blur">
+      {/* ===== プログレスバー ===== */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 w-3/4 max-w-md">
+        <div className="h-2 bg-white/30 rounded-full overflow-hidden">
           <motion.div
-            className="h-2 rounded-full bg-mirror-primary"
+            className="h-full bg-mirror-primary"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.6 }}
           />
         </div>
+        <p className="text-xs text-center mt-2 opacity-70">
+          {index + 1} / {QUESTIONS.length}
+        </p>
       </div>
 
-      {/* ==============================
-          質問カード
-      ============================== */}
-      <div className="mx-auto flex max-w-md items-center justify-center">
-        <AnimatePresence mode="wait">
+      {/* ===== 質問カード ===== */}
+      <div className="w-full max-w-md mt-10">
+        <AnimatePresence custom={direction} mode="wait">
           <motion.div
-            key={questions[current].id}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="w-full rounded-3xl bg-white/30 p-8 shadow-xl backdrop-blur-lg"
+            key={index}
+            className="p-8 rounded-3xl bg-white/35 backdrop-blur-xl shadow-mirror-neumorphic text-center"
+            custom={direction}
+            variants={cardVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: 'spring', stiffness: 300, damping: 30 },
+              opacity: { duration: 0.3 },
+            }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.8}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -120) nextQuestion(1)
+              if (info.offset.x > 120) nextQuestion(-1)
+            }}
           >
-            {/* 質問文 */}
-            <p className="mb-10 text-center text-lg font-semibold text-mirror-charcoal">
-              {questions[current].text}
-            </p>
+            <h2 className="font-semibold text-lg mb-8">
+              {QUESTIONS[index]}
+            </h2>
 
-            {/* 選択肢 */}
             <div className="flex gap-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() =>
-                  handleAnswer(
-                    questions[current].left
-                  )
-                }
-                className="flex-1 rounded-2xl bg-white/40 px-4 py-6 text-mirror-charcoal shadow-md backdrop-blur-lg"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => nextQuestion(-1)}
+                className="flex-1 py-3 rounded-xl bg-white/40 backdrop-blur-lg shadow-mirror-neumorphic"
               >
-                {questions[current].left}
+                いいえ
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() =>
-                  handleAnswer(
-                    questions[current].right
-                  )
-                }
-                className="flex-1 rounded-2xl bg-white/40 px-4 py-6 text-mirror-charcoal shadow-md backdrop-blur-lg"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => nextQuestion(1)}
+                className="flex-1 py-3 rounded-xl bg-mirror-primary text-white shadow-mirror-neumorphic"
               >
-                {questions[current].right}
+                はい
               </motion.button>
             </div>
+
+            <p className="text-xs opacity-50 mt-6">
+              スワイプでも回答できます
+            </p>
           </motion.div>
         </AnimatePresence>
       </div>
     </motion.div>
-  );
+  )
 }
